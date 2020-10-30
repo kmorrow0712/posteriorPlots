@@ -37,28 +37,38 @@
 
 
 createPlot <- function(a,b,c,d) {
+   # import dataset
   df <- utils::read.table(a, sep = "", header = T)
-  print(paste("Dataset",a, "imported!"))
-  print(paste("Your plot title will be: ", b))
-  print(paste("Your left x-axis label will be: ", c))
-  print(paste("Your right x-axis label will be: ", d))
+      print(paste("Dataset",a, "imported!"))
+      print(paste("Your plot title will be: ", b))
+      print(paste("Your left x-axis label will be: ", c))
+      print(paste("Your right x-axis label will be: ", d))
+
+   # gather ROI names and iterations for P+ calculations
   rois <- colnames(df)
-  print("Creating long dataset with P+ values...")
   iterations <- length(df[,1])
+
+  # transpose to long form
+  print("Creating long dataset with P+ values...")
    df.long <- tidyr::tibble()
    df.long <- df %>%
      tidyr::gather(ROI) %>%
-     mutate(index = rep(1:length(rois), each = iterations)) %>%
+     mutate(index = rep(1:length(rois), each = iterations)) %>%         # create index for plotting
      dplyr::group_by(ROI) %>%
-     mutate(mean = mean(value)) %>%
-     mutate(p = ((sum(value > 0)/iterations))) %>%
+     mutate(mean = mean(value)) %>%                                     # calculate mean (not really needed right now but oh well)
+     mutate(p = ((sum(value > 0)/iterations))) %>%                      # calculate P+ value for each ROI
      mutate(p.plot = p) %>%
-     mutate(p.plot = replace(p, p.plot > 0.15 & p.plot < 0.85, NA))
+     mutate(p.plot = replace(p, p.plot > 0.15 & p.plot < 0.85, NA))     # create plotting variable to fill ridges with NA/gray when out of range
+
+   # create a quick summary table for plot labels
    print("Creating summary dataset...")
    P <- df.long %>%
      dplyr::select(ROI, index, mean, p) %>%
      unique() %>%
-   dplyr::arrange(p)
+   dplyr::arrange(p)                                                    # sort by P+ values for plotting
+
+
+   # get quantiles for approximate locations of x-axis labels
    print("Calculating quantiles for x-axis labels...")
    quantiles <- quantile(df.long$value)
    neg.lab.x <- min((df.long$value)/2)
@@ -68,44 +78,53 @@ createPlot <- function(a,b,c,d) {
 
    x.positions <- c(neg.lab.x, 0, pos.lab.x)
 
+   # export dataframes for reference
    write.csv(P, "~/P.csv")
    write.csv(df.long, "~/df_long.csv")
 
+
+   # plot
    print("Plotting...")
    plot <-
      ggplot2::ggplot(df.long,
                      aes(x = value,
-                         y = as.numeric(reorder(index,p)),
+                         y = as.numeric(reorder(index,p)),     # trick the system! Make ggplot think y values are numerics
                          group = ROI,
                          fill = p.plot)) +
-     geom_density_ridges(quantile_lines = TRUE,
+
+     geom_density_ridges(quantile_lines = TRUE,               # quantiles
                          quantiles = 2,
                          scale = 1.75,
                          rel_min_height = .01,
                          color = "#404040",
                          size = .85) +
      geom_vline(xintercept = 0, alpha = .85, color = "black", size = 1) +
+
      scale_y_continuous(breaks = 1:length(P$ROI),
                         expand = c(0,0.1),
                         labels = P$ROI,
                         sec.axis = sec_axis(~.,
                                             breaks = 1:length(P$ROI),
                                             labels = format(round(P$p, 3),nsmall = 2))) +
+
      scale_x_continuous(breaks = x.positions, labels = round(x.positions,2)) +
+
      scale_fill_gradientn(limits = c(0,1),
                           colors = c("blue","cyan",
                                      "gray","yellow","red"),
                           values = c(0,0.15,
-                                     0.150000001, 0.85,
+                                     0.150000001, 0.85,  #looks funny but best way so far to get gradient the way we want it
                                      0.850000001, 1.0),
                           breaks = c(0, 0.15, 0.85, 1)) +
 
-     guides(fill = guide_colorbar(barwidth = 1.5,
+     guides(fill = guide_colorbar(barwidth = 1.5,        # legend qualities
                                   barheight = 8,
                                   nbin = 50,
                                   frame.colour = "black",
                                   frame.linewidth = 1.5,
                                   ticks.colour = "black")) +
+
+      # aesthetic junk, can be messed around with if needed.
      theme(
        plot.background = element_blank(),
        plot.margin = unit(c(0,0,2,0),"cm"),
@@ -123,20 +142,22 @@ createPlot <- function(a,b,c,d) {
        axis.text.y.right = element_text(size = 12, color = "black",margin = unit(c(0,0,0,-0.05),"cm"), angle = 0),
        axis.text.x = element_text(size = 12, color = "black", margin = unit(c(0.04,0,0,0),"cm")),
        axis.ticks.y = element_blank()) +
+
+     # labels
      labs(
        x = NULL,
        y = NULL,
-       title = b,
+       title = b,             # takes on title label specified by user
        fill = "P+ ")
 
-plot <- ggdraw(plot) +
-  draw_text("P+", x = .97, y = .96, size = 16) +
-  draw_text(c, x = .55, y = .08, size = 16) +
-  draw_text(d, x = .75, y = .08, size = 16)
+plot <- cowplot::ggdraw(plot) +
+  cowplot::draw_text("P+", x = .97, y = .96, size = 16) +
+  cowplot::draw_text(c, x = .55, y = .08, size = 16) +
+  cowplot::draw_text(d, x = .75, y = .08, size = 16)
 
 print("Positions of X labels are (.55, .08) and (.75, .08)")
 
-ggsave(paste("~/",b,".png"), height = 7, width = 9, dpi = 800)
+ggsave(paste("~/",b,".png", sep = ""), height = 7, width = 9, dpi = 800)
 
 
 print(paste("Finished! Plot saved as ",b,".png"))
