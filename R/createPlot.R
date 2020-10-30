@@ -1,21 +1,29 @@
 
 # roxygen skeleton --------------------------------------------------------
-#' Create posterior plot
+#' Create ROI posterior distribution plot
 #'
-#' Generate a posterior ridgeline plot from wideframe text .txt or .csv
-#' (cols = ROIs, rows = posteriors).
-#'
-#' ALL PARAMS SHOULD ENTERED IN QUOTES BECAUSE THEY ARE CHARACTERS!
-#' Example: createPlot("path/to/file.txt", "Plot title", "X > Y", "Y > X")
-#' If you do not want X-axis labels, enter NULL for both c and d values.
-#'
-#' For now this package only works with files that has no separator ""
-#' It is best if you have pretty ROI names ahead of time, this package will print whatever the column values are from the input dataset.
+#' Summarize region of interest (ROI) outputs of a Bayesian model using a ridgeline posterior plot. Each ROI's posterior distribution is displayed along with their P+ values (see Limbachia et al, 2020 for details) \cr
+#' This summary & plot are generated from wideform .txt or .csv data. \cr
+#' For now this package only works with files that has no separator/delimiter. It is best if you have pretty ROI names ahead of time, this package will print whatever the column values are from the input dataset.
 #'
 #'
 #'
-#' @param a wide dataframe of posteriors
-#' @param b title of plot
+#' **This package will:** \cr
+#' 1. Transpose wideform dataset \cr
+#'   a. columns are ROIs, rows are posterior values \cr
+#' 2. Calculate P+ values \cr
+#' 3. Output table of P+ values per ROI \cr
+#' 4. Generate standardized ridgeline posterior plot \cr
+#'
+#' **ALL PARAMS SHOULD ENTERED IN QUOTES BECAUSE THEY ARE CHARACTERS!** \cr
+#' Example: _createPlot("path/to/file.txt", "Plot title", "X > Y", "Y > X")_ \cr
+#' If you do not want x-axis labels, enter NA for both c and d values. \cr
+#'
+#'
+#'
+#'
+#' @param a wide dataframe of posteriors (character)
+#' @param b title of plot (character)
 #' @param c right-most (negative) x-axis label
 #' @param d left-most (positive) x-axis label
 #'
@@ -27,9 +35,9 @@
 #'
 #'
 #'
-#' @return df exports long dataframe with P+ values
-#' @return df exports P summary table
-#' @return high resolution posterior plot (dpi = 800, height = 7, width = 9)
+#' @return **df_long.csv** exports long dataframe with P+ values alongside posteriors and means
+#' @return **P.csv** exports P+ summary table
+#' @return **TITLE.png** high resolution posterior plot (dpi = 800, height = 7, width = 9)
 #'
 #' @export createPlot
 
